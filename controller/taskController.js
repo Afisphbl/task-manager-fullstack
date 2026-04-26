@@ -2,7 +2,38 @@ const Task = require("../model/taskModels");
 
 exports.getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find().sort("-createdAt");
+    // 1) Filtering
+    const queryObj = { ...req.query };
+    const excludedQuery = ["page", "sort", "fields", "limit"];
+
+    excludedQuery.forEach((el) => delete queryObj[el]);
+
+    let query = Task.find(queryObj);
+
+    // 2) Sort
+    if (req.query.sort) {
+      const sortBy = req.query.sort.split(",").join(" ");
+      query = query.sort(sortBy);
+    } else {
+      query = query.sort("-createdAt");
+    }
+
+    // 3) Field
+    if (req.query.fields) {
+      const fields = req.query.fields.split(",").join(" ");
+      query = query.select(fields);
+    } else {
+      query = query.select("-__v");
+    }
+
+    // 4) Pagination
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.limit * 1 || 10;
+    const skip = (page - 1) * limit;
+
+    query = query.skip(skip).limit(limit);
+
+    const tasks = await query;
 
     res.status(200).json({
       status: "success",

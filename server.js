@@ -6,6 +6,8 @@ dotenv.config({ path: "./config.env" });
 
 const app = require("./app");
 
+app.set("query parser", "extended");
+
 const PORT = process.env.PORT || 5000;
 
 (async () => {
