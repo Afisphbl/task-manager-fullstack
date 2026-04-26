@@ -39,8 +39,9 @@ exports.getTask = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      status: "error",
+    const status = error.name === "CastError" ? 400 : 500;
+    res.status(status).json({
+      status: status === 500 ? "error" : "fail",
       message: error.message,
     });
   }
@@ -104,10 +105,7 @@ exports.deleteTask = async (req, res) => {
       });
     }
 
-    res.status(204).json({
-      status: "success",
-      data: null,
-    });
+    res.status(204).end();
   } catch (error) {
     res.status(400).json({
       status: "fail",
