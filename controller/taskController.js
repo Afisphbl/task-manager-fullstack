@@ -3,15 +3,30 @@ const Task = require("../model/taskModels");
 exports.getTasks = async (req, res) => {
   try {
     // 1) Filtering
-    const queryObj = { ...req.query };
     const excludedQuery = ["page", "sort", "fields", "limit"];
+    const allowedFields = ["title", "description", "completed", "createdAt"];
 
-    excludedQuery.forEach((el) => delete queryObj[el]);
+    const sanitize = (val) => {
+      if (val === null || typeof val !== "object") return val;
+      const out = Array.isArray(val) ? [] : {};
+      for (const [k, v] of Object.entries(val)) {
+        if (k.startsWith("$")) continue; // drop Mongo operators
+        out[k] = sanitize(v);
+      }
+      return out;
+    };
+
+    const queryObj = {};
+    for (const [k, v] of Object.entries(req.query)) {
+      if (excludedQuery.includes(k)) continue;
+      if (!allowedFields.includes(k)) continue; // whitelist filter fields
+      queryObj[k] = sanitize(v);
+    }
 
     let query = Task.find(queryObj);
 
     // 2) Sort
-    if (req.query.sort) {
+    if (typeof req.query.sort === "string") {
       const sortBy = req.query.sort.split(",").join(" ");
       query = query.sort(sortBy);
     } else {
@@ -19,7 +34,7 @@ exports.getTasks = async (req, res) => {
     }
 
     // 3) Field
-    if (req.query.fields) {
+    if (typeof req.query.fields === "string") {
       const fields = req.query.fields.split(",").join(" ");
       query = query.select(fields);
     } else {
@@ -27,8 +42,10 @@ exports.getTasks = async (req, res) => {
     }
 
     // 4) Pagination
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.limit * 1 || 10;
+    const MAX_LIMIT = 100;
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const rawLimit = Number.parseInt(req.query.limit, 10) || 10;
+    const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT);
     const skip = (page - 1) * limit;
 
     query = query.skip(skip).limit(limit);
