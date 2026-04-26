@@ -14,9 +14,9 @@ exports.getTask = (req, res) => {
 };
 
 exports.createTask = (req, res) => {
-  res.status(200).json({
+  res.status(201).json({
     status: "success",
-    message: `create task with body ${req.body}`,
+    message: `create task`,
   });
 };
 
