@@ -1,14 +1,17 @@
 const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+
+dotenv.config({ path: "./config.env" });
 
 const DATABASE_HOST = process.env.DATABASE_HOST;
 
 const connectDB = async () => {
   try {
     await mongoose.connect(DATABASE_HOST);
-    console.log("Connected to MongoDB");
+
+    console.log("🎉🎉🎉🎉 Server connected to MongoDB successfully. 🎉🎉🎉🎉");
   } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
-    process.exit(1);
+    console.error(`🔥🔥🔥🔥 Error : ${error.message}. 🔥🔥🔥🔥`);
   }
 };
 
