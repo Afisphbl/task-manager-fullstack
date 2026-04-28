@@ -1,122 +1,73 @@
 const Task = require("../model/taskModels");
 const Features = require("../utils/apiFeatures");
+const AppError = require("../utils/appError");
+const catchAsync = require("../utils/catchAsync");
 
-exports.getTasks = async (req, res) => {
-  try {
-    const features = new Features(Task.find(), req.query)
-      .filter()
-      .sort()
-      .limitFields()
-      .pagination();
+exports.getTasks = catchAsync(async (req, res) => {
+  const features = new Features(Task.find(), req.query)
+    .filter()
+    .sort()
+    .limitFields()
+    .pagination();
 
-    const tasks = await features.query;
+  const tasks = await features.query;
 
-    res.status(200).json({
-      status: "success",
-      result: tasks.length,
-      data: {
-        tasks,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: error.message,
-    });
-  }
-};
+  res.status(200).json({
+    status: "success",
+    result: tasks.length,
+    data: {
+      tasks,
+    },
+  });
+});
 
-exports.getTask = async (req, res) => {
+exports.getTask = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  try {
-    const task = await Task.findById(id);
+  const task = await Task.findById(id);
 
-    if (!task) {
-      return res.status(404).json({
-        status: "fail",
-        message: "Task not found",
-      });
-    }
+  if (!task) return next(new AppError("Task not found", 404));
 
-    res.status(200).json({
-      status: "success",
-      data: {
-        task,
-      },
-    });
-  } catch (error) {
-    const status = error.name === "CastError" ? 400 : 500;
-    res.status(status).json({
-      status: status === 500 ? "error" : "fail",
-      message: error.message,
-    });
-  }
-};
+  res.status(200).json({
+    status: "success",
+    data: {
+      task,
+    },
+  });
+});
 
-exports.createTask = async (req, res) => {
-  try {
-    const newTask = await Task.create(req.body);
-    res.status(201).json({
-      status: "success",
-      data: {
-        task: newTask,
-      },
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: "fail",
-      message: error.message,
-    });
-  }
-};
+exports.createTask = catchAsync(async (req, res, next) => {
+  const newTask = await Task.create(req.body);
+  res.status(201).json({
+    status: "success",
+    data: {
+      task: newTask,
+    },
+  });
+});
 
-exports.updateTask = async (req, res) => {
+exports.updateTask = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  try {
-    const task = await Task.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+  const task = await Task.findByIdAndUpdate(id, req.body, {
+    new: true,
+    runValidators: true,
+  });
 
-    if (!task) {
-      return res.status(404).json({
-        status: "fail",
-        message: "Task not found",
-      });
-    }
+  if (!task) return next(new AppError("Task not found", 404));
 
-    res.status(200).json({
-      status: "success",
-      data: {
-        task,
-      },
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: "fail",
-      message: error.message,
-    });
-  }
-};
+  res.status(200).json({
+    status: "success",
+    data: {
+      task,
+    },
+  });
+});
 
-exports.deleteTask = async (req, res) => {
+exports.deleteTask = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  try {
-    const task = await Task.findByIdAndDelete(id);
+  const task = await Task.findByIdAndDelete(id);
 
-    if (!task) {
-      return res.status(404).json({
-        status: "fail",
-        message: "Task not found",
-      });
-    }
+  if (!task) return next(new AppError("Task not found", 404));
 
-    res.status(204).end();
-  } catch (error) {
-    res.status(400).json({
-      status: "fail",
-      message: error.message,
-    });
-  }
-};
+  res.status(204).end();
+});
